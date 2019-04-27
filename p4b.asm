@@ -17,7 +17,7 @@ code segment
 				db	'f', 'g', 'h', 'i', 'j', 'k'
 				db	'l', 'm', 'n', 'o', 'p', 'q'
 				db	'r', 's', 't', 'u', 'v', 'w'
-	debug		db	"hola mundo$" ; Should be 43 54 51 32 52 64 53 35 54
+	debug		db	"hola mundo$" 				; Should be 43 54 51 32 52 64 53 35 54
 
 	assume cs: code
 	inicio proc
@@ -30,15 +30,15 @@ code segment
 		;ret
 
 	encode_proc:
-		;push bp
-		;mov bp, sp						; Create the stack
-		;push si di ax bx cx	dx			; Push em 
+		push bp
+		mov bp, sp						; Create the stack
+		push si di ax bx cx dx					; Push em
 
 		mov bx, dx
 
 		xor si, si
 		main_loop:
-			mov ch, debug[si]			; Get character
+			mov ch, debug[si]				;~ Get character
 
 			mov di, -1
 			cmp ch, ' '					; if space skip
@@ -48,15 +48,15 @@ code segment
 
 			check_table:
 				inc di
-				cmp ch, cs:polibio[di]	; Check if character is in the table
+				cmp ch, cs:polibio[di]			; Check if character is in the table
 				jnz check_table
 
 			mov ax, di
 			mov ch, ORDEN
-			div ch					; Transform the code into 2 ASCII characters					
+			div ch						; Transform the code into 2 ASCII characters
 			mov ch, ah
 			mov cl, al
-			
+
 			print:
 
 				mov ah, 2
@@ -79,21 +79,24 @@ code segment
 				jmp main_loop				; Loop
 
 		main_end:
+			mov ah, 2
+			mov dl, 13					; Carriage
+			int 21h
 
+			mov ah, 2
 			mov dl, 10					; Newline
 			int 21h
 
-			mov dl, 13					; Carriage return
-			int 21h
-		
-		;pop dx cx bx ax di si bp
-		;ret								; Return
-	
+		pop dx cx bx ax di si bp
+
+		mov ax,4C00H						; FIN DE PROGRAMA Y VUELTA AL DOS
+		int 21H							; Return
+
 	decode_proc:
-		
-		
+
+
 inicio endp
 code ends
 end inicio
-			
+
 
