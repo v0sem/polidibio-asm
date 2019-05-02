@@ -40,7 +40,6 @@ pila ends
 ;**************************************************************************
 ; definicion del segmento extra
 extra segment
-result dw 0,0 ;ejemplo de inicialización. 2 palabras (4 bytes)
 extra ends
 
 ;**************************************************************************
