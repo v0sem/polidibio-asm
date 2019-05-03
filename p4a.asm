@@ -256,6 +256,19 @@ print_error_rsi:
 
 rsi endp
 
+timer proc
+
+    cmp ah, 0
+    jne timer_loop
+    mov ah, 18
+
+    timer_loop:
+        dec al      ;-1 to the counter every 1/18th of a second
+        cmp al, 0
+        mov ah, 1   ;Sets ah to 1 if the second is finished 
+
+timer endp
+
 ;**************************************************************************
 ; installer and uninstaller
 ;**************************************************************************
@@ -279,9 +292,23 @@ instalador proc
     mov es:[57H*4+2], BX
     sti
 
+    mov ax, 0
+    mov es, ax
+    mov ax, offset timer
+    mov bx, cs
+    cli
+
+    in al, 21H
+	or al, 00000001B            ; closes timer
+    mov es:[1CH*4-2], 0BEEFH ; sign this address to check later if its installed
+    mov es:[1CH*4], AX 
+    mov es:[1CH*4+2], BX
+    sti
+
     mov dx, offset instalador
     int 27h
 
+    ret
 instalador endp
 
 desinstalador proc
@@ -308,6 +335,22 @@ desinstalador proc
     mov ds:[57h*4-2], cx ; remove the sign
     mov ds:[57h*4], cx
     mov ds:[57h*4+2], cx
+    sti
+
+    mov cx, 0
+    mov ds, cx
+    mov es, ds:[1Ch*4+2]
+    mov bx, es:[2Ch]
+
+    mov ah, 49h
+    int 21H
+    mov es, bx
+    int 21H
+
+    cli
+    mov ds:[1Ch*4-2], cx ; remove the sign
+    mov ds:[1Ch*4], cx
+    mov ds:[1Ch*4+2], cx
     sti
 
     ret
