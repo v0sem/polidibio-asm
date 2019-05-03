@@ -5,8 +5,14 @@
 ;**************************************************************************
 ; definicion del segmento de datos
 datos segment
-debug		db "hola mundo$"
+debug		db "palomo11la11rechupa$"
 debug_dec	db 43, 54, 51, 32, 52, 64, 53, 35, 54, '$'
+polibio		db 'x', 'y', 'z', '0', '1', '2'
+			db '3', '4', '5', '6', '7', '8'
+			db '9', 'a', 'b', 'c', 'd', 'e'
+			db 'f', 'g', 'h', 'i', 'j', 'k'
+			db 'l', 'm', 'n', 'o', 'p', 'q'
+			db 'r', 's', 't', 'u', 'v', 'w'
 datos ends
 
 ;**************************************************************************
@@ -35,18 +41,19 @@ mov es, ax
 mov sp, 64 ; carga el puntero de pila con el valor mas alto
 ; fin de las inicializaciones
 
+mov si, offset polibio
 mov dx, offset debug
 mov ah, 10h
-
 int 57h
 
+mov si, offset polibio
 mov dx, offset debug_dec
 mov ah, 11h
-
 int 57h
 
 mov ax, 4C00h
 int 21h
+
 inicio endp
 ; fin del segmento de codigo
 code ends

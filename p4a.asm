@@ -107,60 +107,51 @@ main:
                 db "    - Sin parametros : imprime esta informacion", 10, 13
                 db "    - Parametro /I   : instala la rutina", 10, 13
                 db "    - Parametro /D   : desinstala la rutina", 10, 13
-                db "- Ejecutar p4b.exe o p4c.exe para comprobar el funcionamiento", 10, 13
+                db "- Ejecutar p4b.exe o p4c.exe para comprobar el funcionamiento", 10, 13, '$'
 
     error_str	db 10, "Error, YOU did something wrong!", 10, 13, '$'
 
 rsi proc
     
     cmp ah, 10h
-    jnz m_decode_proc
-
+    jne m_decode_proc
+    call encode_proc
+    jmp end_end_rsi
+    
 m_decode_proc:
 	cmp ah, 11h
-	jnz m_print_matrix
+    jne end_end_rsi
 	call decode_proc
 
-	m_print_matrix:
-	call print_matrix
-
 end_end_rsi:
-	mov ax,4C00H							; FIN DE PROGRAMA Y VUELTA AL DOS
-	int 21H
-
-
-print_matrix:
-	mov dx, offset polibio_b
-	mov ah, 9
-	int 21h
-
-	pop dx ax
-
-	ret
+	iret
 
 encode_proc:
-	mov bx, dx
+; recibe en si la tabla de polibio
+; recibe en dx la string a convertir
+	mov di, dx
 
-	xor si, si
+    ; si contiene la tabla
+
 	main_loop:
-		mov ch, [bx][si] ;~ Get character
+		mov ch, [di] ;~ Get character
 
-		mov di, -1
+		mov bx, -1
 		cmp ch, '$' ; if end line, complete program
 		jz main_end
 
 		check_table:
-			inc di
-			cmp ch, polibio[di] ; Check if character is in the table
+			inc bx
+			cmp ch, [si][bx] ; Check if character is in the table
 			je found_char ; we found it bois
 
-			cmp di, MAX_TAB ; did we check everything?
+			cmp bx, 35 ; did we check everything?
 			jne check_table ; keep looking
-			jmp print_error_rsi ; not found
+			jmp end_end_rsi ; not found
 
 		found_char:
-		mov ax, di
-		mov ch, ORDEN
+		mov ax, bx
+		mov ch, 6
 		div ch ; Transform the code into 2 ASCII characters
 		mov ch, ah
 		mov cl, al
@@ -183,7 +174,7 @@ encode_proc:
 				int 21h ; Print a space
 
 		skip:
-			inc si
+			inc di
 			jmp main_loop ; Loop
 
 	main_end:
@@ -198,30 +189,32 @@ encode_proc:
 	ret
 
 decode_proc:
-	xor si, si
-    mov bx, dx
+; recibe en si la tabla de polibio
+; recibe en dx la string a convertir
+    mov di, dx
 
 	get_char:
-		mov al, [bx][si]
+		mov al, [di]
 		xor ah, ah
 		mov dl, 10
 		div dl ; al primero, ah segundo
 
 		dec al
-		mov dl, ah ; guardar segundo digito
-		dec bx
+		dec ah
+
+		mov bl, ah ; guardar segundo digito
 
 		; segundo + ORDEN * primero
 		xor ah, ah
-		mov cx, ORDEN
+		mov cx, 6
 		mul cx ; ORDEN * primero
-		add dx, ax ; + segundo
+		add bx, ax ; + segundo
 
 		xor ax, ax
-        mov si, dx
-		mov al, polibio[si]
+        xor bh, bh
+		mov al, [si][bx]
 
-		mov dl, [bx][si] ; load again to check if we are finished
+		mov dl, [di] ; load again to check if we are finished
 
 		cmp dl, '$' ; Check if finished
 		je finish_printing ; if we are finished, jump to cont
@@ -230,7 +223,7 @@ decode_proc:
 		mov ah, 2
 		int 21h
 
-		inc si
+		inc di
 
 		jmp get_char ; go back
 
@@ -243,16 +236,10 @@ decode_proc:
 		mov dl, 10 ; Newline
 		int 21h
 	
-	ret
-
-print_error_rsi:
-; takes no arguments and prints an error before exiting
-; returns no arguments
-	mov dx, offset error_str
-	mov ah, 9h
+	mov ax, 4C00h
 	int 21h
-	jmp end_end_rsi
-
+	
+	ret
 
 rsi endp
 
