@@ -7,7 +7,8 @@
 datos segment
 INPUT_ASK	db "Introduce una cadena de caracteres:", 10, 13
 ERROR		db "You did something wrong", 10, 13
-INPUT		db 128 DUP(0)
+INPUT		db 32 DUP(0)
+CODE		db 10 DUP(0)
 ENCODE		db "encode"
 DECODE		db "decode"
 datos ends
@@ -34,9 +35,10 @@ inicio proc
 	call get_input
 
 	call get_code
-	call comp_decode
 
+	call comp_decode
 	je decode
+	
 	call comp_encode
 	je encode
 
@@ -49,11 +51,42 @@ end_end:
 	mov ah, 4Ch
 	int 21h 
 
+encode:
+	mov dx, INPUT[2]
+	mov ah, 10h
+
+	int 57h
+	jmp end_end
+
+decode:
+	mov dx, INPUT[2]
+	mov ah, 11h
+
+	int 57h
+	jmp end_end
+
+
 get_input:
 	mov dx, OFFSET INPUT
 	mov ah, 0Ah
+	mov INPUT[0], 29
 	int 21h
 	xor bx, bx
+	mov bl, INPUT[1]
+	mov INPUT[BX+2], '$'
+
+	ret
+
+get_code:
+	mov dx, OFFSET CODE
+	mov ah, 0Ah
+	mov CODE[0], 8
+	int 21h
+	xor bx, bx
+	mov bl, CODE[1]
+	mov CODE[BX+2], '$'
+
+	ret
 
 cmp_decode:
 ; Takes data from INPUT
