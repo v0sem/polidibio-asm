@@ -107,7 +107,7 @@ main:
                 db "    - Sin parametros : imprime esta informacion", 10, 13
                 db "    - Parametro /I   : instala la rutina", 10, 13
                 db "    - Parametro /D   : desinstala la rutina", 10, 13
-                db "- Ejecutar p4b.exe o p4c.exe para comprobar el funcionamiento", 10, 13
+                db "- Ejecutar p4b.exe o p4c.exe para comprobar el funcionamiento", 10, 13, '$'
 
     error_str	db 10, "Error, YOU did something wrong!", 10, 13, '$'
 
@@ -181,6 +181,20 @@ encode_proc:
 				mov ah, 2
 				mov dl, ' '
 				int 21h ; Print a space
+            
+        in al, 21H
+    	and al, 11111110b   ;habilita el timer
+	    out 21H ,al
+
+        mov ax, 0018h
+        wait_encode:
+            cmp ah, 1
+            jne wait_encode
+
+        in al, 21H
+	    or al, 00000001B   ;deshabilita el timer
+	    out 21H ,al
+            
 
 		skip:
 			inc si
@@ -230,6 +244,19 @@ decode_proc:
 		mov ah, 2
 		int 21h
 
+        in al, 21H
+    	and al, 11111110b   ;habilita el timer
+	    out 21H ,al
+
+        mov ax, 0018h
+        wait_decode:
+            cmp ah, 1
+            jne wait_decode
+
+        in al, 21H
+	    or al, 00000001B   ;deshabilita el timer
+	    out 21H ,al
+
 		inc si
 
 		jmp get_char ; go back
@@ -267,6 +294,7 @@ timer proc
         cmp al, 0
         mov ah, 1   ;Sets ah to 1 if the second is finished 
 
+    ret
 timer endp
 
 ;**************************************************************************
@@ -292,18 +320,22 @@ instalador proc
     mov es:[57H*4+2], BX
     sti
 
+    mov dx, offset instalador
+    int 27h
+
+    in al, 21H
+	or al, 00000001B   ;DESHABILITA TIMER
+	out 21H ,al
+
     mov ax, 0
     mov es, ax
     mov ax, offset timer
     mov bx, cs
     cli
 
-    in al, 21H
-	or al, 00000001B            ; closes timer
     mov es:[1CH*4-2], 0BEEFH ; sign this address to check later if its installed
     mov es:[1CH*4], AX 
     mov es:[1CH*4+2], BX
-    sti
 
     mov dx, offset instalador
     int 27h
