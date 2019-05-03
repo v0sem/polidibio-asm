@@ -113,188 +113,41 @@ main:
 
 rsi proc
     
-    cmp ah, 10h
-    jnz m_decode_proc
+    mov dl, 34
+    mov ah, 2h
+    int 21h
 
-m_decode_proc:
-	cmp ah, 11h
-	jnz m_print_matrix
-	call decode_proc
+    in al, 21H
+    and al, 11111110b   ;habilita el timer
+    out 21H ,al
 
-	m_print_matrix:
-	call print_matrix
+    mov ax, 18
+    wait_decode:
+        cmp dx, 1
+        jne wait_decode
 
-end_end_rsi:
-	mov ax,4C00H							; FIN DE PROGRAMA Y VUELTA AL DOS
-	int 21H
+    in al, 21H
+    or al, 00000001b   ;deshabilita el timer
+    out 21H ,al
 
-
-print_matrix:
-	mov dx, offset polibio_b
-	mov ah, 9
-	int 21h
-
-	pop dx ax
-
-	ret
-
-encode_proc:
-	mov bx, dx
-
-	xor si, si
-	main_loop:
-		mov ch, [bx][si] ;~ Get character
-
-		mov di, -1
-		cmp ch, '$' ; if end line, complete program
-		jz main_end
-
-		check_table:
-			inc di
-			cmp ch, polibio[di] ; Check if character is in the table
-			je found_char ; we found it bois
-
-			cmp di, MAX_TAB ; did we check everything?
-			jne check_table ; keep looking
-			jmp print_error_rsi ; not found
-
-		found_char:
-		mov ax, di
-		mov ch, ORDEN
-		div ch ; Transform the code into 2 ASCII characters
-		mov ch, ah
-		mov cl, al
-
-		print:
-
-			mov ah, 2
-			add cl, 31h
-			mov dl, cl
-			int 21h ; Print first
-
-			mov ah, 2
-			add ch, 31h
-			mov dl, ch
-			int 21h ; Print second
-
-			print_space:
-				mov ah, 2
-				mov dl, ' '
-				int 21h ; Print a space
-            
-        in al, 21H
-    	and al, 11111110b   ;habilita el timer
-	    out 21H ,al
-
-        mov ax, 0018h
-        wait_encode:
-            cmp ah, 1
-            jne wait_encode
-
-        in al, 21H
-	    or al, 00000001B   ;deshabilita el timer
-	    out 21H ,al
-            
-
-		skip:
-			inc si
-			jmp main_loop ; Loop
-
-	main_end:
-		mov ah, 2
-		mov dl, 13 ; Carriage
-		int 21h
-
-		mov ah, 2
-		mov dl, 10 ; Newline
-		int 21h
-
-	ret
-
-decode_proc:
-	xor si, si
-    mov bx, dx
-
-	get_char:
-		mov al, [bx][si]
-		xor ah, ah
-		mov dl, 10
-		div dl ; al primero, ah segundo
-
-		dec al
-		mov dl, ah ; guardar segundo digito
-		dec bx
-
-		; segundo + ORDEN * primero
-		xor ah, ah
-		mov cx, ORDEN
-		mul cx ; ORDEN * primero
-		add dx, ax ; + segundo
-
-		xor ax, ax
-        mov si, dx
-		mov al, polibio[si]
-
-		mov dl, [bx][si] ; load again to check if we are finished
-
-		cmp dl, '$' ; Check if finished
-		je finish_printing ; if we are finished, jump to cont
-
-		mov dx, ax
-		mov ah, 2
-		int 21h
-
-        in al, 21H
-    	and al, 11111110b   ;habilita el timer
-	    out 21H ,al
-
-        mov ax, 0018h
-        wait_decode:
-            cmp ah, 1
-            jne wait_decode
-
-        in al, 21H
-	    or al, 00000001B   ;deshabilita el timer
-	    out 21H ,al
-
-		inc si
-
-		jmp get_char ; go back
-
-	finish_printing:
-		mov ah, 2
-		mov dl, 13 ; Carriage
-		int 21h
-
-		mov ah, 2
-		mov dl, 10 ; Newline
-		int 21h
-	
-	ret
-
-print_error_rsi:
-; takes no arguments and prints an error before exiting
-; returns no arguments
-	mov dx, offset error_str
-	mov ah, 9h
-	int 21h
-	jmp end_end_rsi
+    mov dl, 34
+    mov ah, 2h
+    int 21h
 
 
 rsi endp
 
 timer proc
 
-    cmp ah, 0
+    cmp al, 0
     jne timer_loop
-    mov ah, 18
+    mov dx, 1
+    mov al, 18
 
     timer_loop:
         dec al      ;-1 to the counter every 1/18th of a second
-        cmp al, 0
-        mov ah, 1   ;Sets ah to 1 if the second is finished 
 
-    ret
+    iret
 timer endp
 
 ;**************************************************************************
